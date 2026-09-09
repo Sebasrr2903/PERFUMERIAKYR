@@ -56,3 +56,4 @@ body{background:var(--paper)}
 .women{background:linear-gradient(145deg,#b37678,#6f2c40)}.men{background:linear-gradient(145deg,#42525a,#17262d)}.unisex{background:linear-gradient(145deg,#b49b6d,#6f5b38)}
 .featured,.dark-carousel{background:var(--dark)}.featured-card,.dark-carousel .scent-card{background:#491526}.dark-carousel .eyebrow,.dark-carousel .scent-card small{color:#d5b878}.dark-carousel .carousel-controls button{background:var(--wine)}.dark-carousel .scent-card b{color:#e0c18a}
 .about{background:var(--cream);border-color:transparent}.cta{background:var(--wine);color:#fff}.light-btn{color:var(--wine)}.cart-header,footer{background:#1f0911}.pedido-modal{background:#210a13d9}
+.product-card{cursor:pointer}.product-card select{cursor:pointer}
