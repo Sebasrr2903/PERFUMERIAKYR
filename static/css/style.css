@@ -37,3 +37,22 @@ body{background:linear-gradient(180deg,#fffaf2 0%,#f4e4d2 48%,#fbf6ed 100%)}
 .women{background:linear-gradient(145deg,#d9ad93,#9a6146)}.men{background:linear-gradient(145deg,#202326,#050505)}.unisex{background:linear-gradient(145deg,#396348,#173a2c)}
 .featured,.dark-carousel{background:linear-gradient(135deg,#171512,#493722)}.featured-card,.dark-carousel .scent-card{background:#33271d}.dark-carousel .eyebrow,.dark-carousel .scent-card small{color:#dfba78}.dark-carousel .carousel-controls button{background:#b0803d}.dark-carousel .scent-card b{color:#e3bc78}
 .about{background:radial-gradient(circle at 80% 20%,#fffaf0 0%,transparent 35%),linear-gradient(125deg,#ead5bc,#f7ead9);border:1px solid #ddc4a3}.cta{background:linear-gradient(125deg,#9b713b,#5f3b1f);color:#fff}.light-btn{color:#5f3b1f}.cart-header,footer{background:linear-gradient(135deg,#171512,#3b2a1b)}.pedido-modal{background:#21180fda}
+
+/* Restauracion de la paleta original: vino, dorado y crema */
+:root{--wine:#641d32;--dark:#37101e;--gold:#b99558;--cream:#f6f1e8;--paper:#fcfaf6;--ink:#211c1d;--muted:#746b69;--line:#dfd7cc}
+body{background:var(--paper)}
+.announcement{background:var(--dark);color:#f5eade}.announcement i{background:var(--gold)}
+.site-header{background:#fcfaf6ed;border-color:var(--line)}
+.brand-mark{border-color:var(--gold);color:var(--wine)}.brand small,.eyebrow{color:var(--gold)}
+.hero{background:var(--cream)}.hero h1 em,.about h2 em{color:var(--wine)}
+.hero-visual{background:linear-gradient(145deg,#d9c8b8,#eee4d7 58%,#bfa796)}
+.glow{background:#fff8}.bottle-body{border-color:#ddc286;background:linear-gradient(135deg,#f3d293c9,#b86f44d9 70%,#7a342fe8)}
+.bottle-back{background:linear-gradient(135deg,#773749de,#38111ce8);border-color:#bd985f}.botanical{background:#594f38cc}.leaf-two{background:#77694a}
+.benefits{background:#fff}.visual-catalog,.category-section,.catalog{background:var(--paper)}.visual-catalog:nth-of-type(even){background:var(--cream)}
+.primary,.checkout,.product-image>button{background:var(--wine);box-shadow:0 10px 25px #641d3233}.primary:hover{background:var(--dark)}
+.header-cart{border-color:var(--wine);color:var(--wine)}.header-cart:hover,.filter.active,.filter:hover{background:var(--wine);border-color:var(--wine)}.header-cart b{background:var(--wine)}
+.benefits article>span,.featured-price strong,.scent-card b{color:var(--gold)}.carousel-controls button{background:var(--dark);box-shadow:0 8px 20px #37101e30}.carousel-controls button:hover{background:var(--wine)}
+.scent-card{background:#fff;box-shadow:0 14px 40px #39111d12}.scent-card small{color:var(--gold)}.product-card{background:#fff;border-color:#e5ded4}.product-image{background:#eee8df}
+.women{background:linear-gradient(145deg,#b37678,#6f2c40)}.men{background:linear-gradient(145deg,#42525a,#17262d)}.unisex{background:linear-gradient(145deg,#b49b6d,#6f5b38)}
+.featured,.dark-carousel{background:var(--dark)}.featured-card,.dark-carousel .scent-card{background:#491526}.dark-carousel .eyebrow,.dark-carousel .scent-card small{color:#d5b878}.dark-carousel .carousel-controls button{background:var(--wine)}.dark-carousel .scent-card b{color:#e0c18a}
+.about{background:var(--cream);border-color:transparent}.cta{background:var(--wine);color:#fff}.light-btn{color:var(--wine)}.cart-header,footer{background:#1f0911}.pedido-modal{background:#210a13d9}
