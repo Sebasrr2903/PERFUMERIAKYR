@@ -1,0 +1,778 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gestión de tienda | Kyr Parfums</title>
+   
+
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+
+
+
+    <!-- PANEL -->
+
+    <div class="admin-tabs">
+
+        <button class="tab-btn active" data-tab="productos"
+            onclick="mostrarTab('productos', this); filtrarTipoProducto('todos')">
+            <span>📦</span>
+
+            Productos
+        </button>
+
+        <button class="tab-btn" data-tab="pedidos"
+            onclick="mostrarTab('pedidos', this)">
+            <span>🛒</span>
+            Pedidos
+        </button>
+
+        {% if request.user.is_superuser %}
+        <button class="tab-btn" data-tab="usuarios"
+            onclick="mostrarTab('usuarios', this)">
+            <span>👥</span>
+            Usuarios
+        </button>
+        {% endif %}
+
+    </div>
+    <header>
+
+        <h1>
+            Kyr Parfums · Gestión de tienda
+        </h1>
+        <a href="{% url 'logout_admin' %}"> <button onclick="logout()">
+                Cerrar sesión
+            </button></a>
+
+
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="admin-message admin-message-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div id="tab-productos">
+
+        {% if error_producto %}
+        <div class="admin-error">
+            <strong>Error al guardar el producto</strong>
+            <p>{{ error_producto }}</p>
+        </div>
+        {% endif %}
+
+        <!-- FORMULARIO -->
+
+        <div class="admin-form">
+
+            <h2>Agregar producto</h2>
+
+            <form method="POST" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <div class="form-grid">
+
+                    <input type="text" name="nombre" placeholder="Nombre producto" required>
+
+                    <input type="number" name="precio" placeholder="Precio" required>
+
+                    <input type="number" name="precio_promocional"
+                        class="promo-field"
+                        placeholder="Precio promocional (opcional)"
+                        min="0" step="0.01">
+
+                    <select name="tipo_publicacion" id="tipoPublicacion"
+                        onchange="actualizarConstructor('crear')">
+                        <option value="producto">Producto normal</option>
+                        <option value="kit">Kit de equipamiento</option>
+                        <option value="promocion">Promoción</option>
+                    </select>
+
+                    <div class="builder-field destacado-field">
+                        <label>Texto de la etiqueta</label>
+                        <input type="text" name="etiqueta_destacado"
+                            placeholder="Ej: Desayuno especial" maxlength="40">
+                    </div>
+
+                    <div class="builder-field destacado-field">
+                        <label>Disponible desde (opcional)</label>
+                        <input type="datetime-local" name="destacado_desde">
+                    </div>
+
+                    <div class="builder-field destacado-field">
+                        <label>Disponible hasta (opcional)</label>
+                        <input type="datetime-local" name="destacado_hasta">
+                    </div>
+
+                    <div class="option-builder kit-field full"
+                        data-hidden-input="opcionesBebidaCrear">
+                        <label>Variantes: talla, color o compatibilidad</label>
+                        <div class="option-entry">
+                            <input type="text" class="option-input"
+                                placeholder="Ej: 50 ml">
+                            <button type="button" onclick="agregarOpcion(this)">
+                                + Agregar opción
+                            </button>
+                        </div>
+                        <div class="option-chips"></div>
+                        <input type="hidden" id="opcionesBebidaCrear"
+                            name="variantes">
+                    </div>
+
+                    <select name="categoria">
+
+                        <option value="mujer">Mujer</option>
+                        <option value="hombre">Hombre</option>
+                        <option value="unisex">Unisex</option>
+                        <option value="arabes">Perfumes árabes</option>
+                        <option value="sets">Sets de regalo</option>
+
+                    </select>
+
+                    <input type="number" name="stock" placeholder="Stock" required>
+
+                    <input type="file" name="imagen" class="file-input" required>
+
+                    <textarea class="full" name="descripcion" placeholder="Descripción del producto"
+                        required></textarea>
+
+                </div>
+
+                <button type="submit" class="btn-save">
+                    💾 Guardar producto
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- TABLA -->
+
+        <div class="admin-products">
+
+            <h2>Productos registrados</h2>
+
+            <div class="filtros-tipo-producto">
+                <button type="button" class="filtro-tipo active"
+                    onclick="filtrarTipoProducto('todos', this)">
+                    Todos
+                </button>
+                <button type="button" class="filtro-tipo"
+                    onclick="filtrarTipoProducto('producto', this)">
+                    📦 Productos normales
+                </button>
+                <button type="button" class="filtro-tipo"
+                    onclick="filtrarTipoProducto('kit', this)">
+                    🧰 Kits
+                </button>
+                <button type="button" class="filtro-tipo"
+                    onclick="filtrarTipoProducto('promocion', this)">
+                    🏷️ Promociones
+                </button>
+            </div>
+
+            <table class="productos-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Imagen</th>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Promo</th>
+                        <th>Categoría</th>
+                        <th>Stock</th>
+                        <th>Acciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for p in productos %}
+
+                    <tr class="fila-producto-admin"
+                        data-tipo="{% if p.es_kit %}kit{% elif p.en_promocion %}promocion{% else %}producto{% endif %}">
+
+                        <td>
+
+                            <img src="{{ p.imagen.url }}" class="table-img" alt="{{ p.nombre }}">
+
+                        </td>
+
+                        <td>{{ p.nombre }}</td>
+
+                        <td>₡{{ p.precio }}</td>
+
+                        <td>
+                            {% if p.en_promocion and p.precio_promocional %}
+                                ₡{{ p.precio_promocional }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>{{ p.get_categoria_display }}</td>
+
+                        <td>{{ p.stock }}</td>
+
+                        <td>
+
+                            <div class="acciones">
+                            <button type="button" class="btn-edit"
+                                onclick="abrirModal(
+                                    '{{ p.id }}',
+                                    '{{ p.nombre|escapejs }}',
+                                    '{{ p.precio|stringformat:"f" }}',
+                                    '{{ p.descripcion|escapejs }}',
+                                    '{{ p.categoria }}',
+                                    '{{ p.stock }}',
+                                    '{{ p.imagen.url }}',
+                                    '{{ p.en_promocion|yesno:"true,false" }}',
+                                    '{% if p.precio_promocional %}{{ p.precio_promocional|stringformat:"f" }}{% endif %}',
+                                    '{{ p.es_kit|yesno:"true,false" }}',
+                                    '{{ p.variantes|escapejs }}',
+                                    '{{ p.etiqueta_destacado|escapejs }}',
+                                    '{{ p.destacado_desde|date:"Y-m-d\TH:i" }}',
+                                    '{{ p.destacado_hasta|date:"Y-m-d\TH:i" }}'
+                                )">
+                                    ✏️ Editar
+                                </button>
+                                <a href="{% url 'eliminar_producto' p.id %}"
+                                    class="btn-delete"
+                                    data-swal-confirm
+                                    data-swal-title="¿Eliminar este producto?"
+                                    data-swal-text="Esta acción no se puede deshacer."
+                                    data-swal-button="Sí, eliminar">
+                                    🗑️ Eliminar
+                                </a>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+
+                        <td colspan="7">
+
+                            No hay productos registrados.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="admin-container">
+
+
+    </div>
+    <!-- MODAL -->
+
+
+    <div id="modalEditar" class="modal">
+
+        <div class="modal-content">
+
+            <span class="close" onclick="cerrarModal()">
+                ×
+            </span>
+
+            <h2>Editar producto</h2>
+
+
+            <form id="formEditar" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <input type="hidden" id="editId">
+
+                <input type="text" id="editNombre" name="nombre" placeholder="Nombre">
+
+                <input type="number" id="editPrecio" name="precio" placeholder="Precio">
+
+                <input type="number" id="editPrecioPromocional"
+                    class="edit-promo-field"
+                    name="precio_promocional"
+                    placeholder="Precio promocional (opcional)"
+                    min="0" step="0.01">
+
+                <select id="editTipoPublicacion" name="tipo_publicacion"
+                    onchange="actualizarConstructor('editar')">
+                    <option value="producto">Producto normal</option>
+                    <option value="kit">Kit de equipamiento</option>
+                    <option value="promocion">Promoción</option>
+                </select>
+
+                <input type="text" id="editEtiquetaDestacado"
+                    name="etiqueta_destacado"
+                    placeholder="Texto de la etiqueta" maxlength="40">
+
+                <input type="datetime-local" id="editDestacadoDesde"
+                    name="destacado_desde">
+
+                <input type="datetime-local" id="editDestacadoHasta"
+                    name="destacado_hasta">
+
+                <div class="option-builder edit-kit-field"
+                    data-hidden-input="editOpcionesBebida">
+                    <label>Variantes: talla, color o compatibilidad</label>
+                    <div class="option-entry">
+                        <input type="text" class="option-input"
+                            placeholder="Ej: 100 ml">
+                        <button type="button" onclick="agregarOpcion(this)">
+                            + Agregar opción
+                        </button>
+                    </div>
+                    <div class="option-chips"></div>
+                    <input type="hidden" id="editOpcionesBebida"
+                        name="variantes">
+                </div>
+
+                <textarea id="editDescripcion" name="descripcion" placeholder="Descripción">
+    </textarea>
+
+                <select id="editCategoria" name="categoria">
+
+                    <option value="mujer">Mujer</option>
+                    <option value="hombre">Hombre</option>
+                    <option value="unisex">Unisex</option>
+                    <option value="arabes">Perfumes árabes</option>
+                    <option value="sets">Sets de regalo</option>
+
+                </select>
+
+                <input type="number" id="editStock" name="stock" placeholder="Stock">
+
+                    <!-- Vista previa de la imagen actual -->
+                    <img id="previewImagen"
+                        src=""
+                        width="120"
+                        style="border-radius:10px; margin:10px 0;">
+
+                    <!-- Nueva imagen -->
+                    <input
+                        type="file"
+                        id="editImagen"
+                        name="imagen"
+                        accept="image/*">
+
+                <button type="submit">
+                    Guardar cambios
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+<div id="tab-pedidos" style="display:none;">
+
+    <div class="admin-products">
+
+        <h2>🛒 Pedidos recibidos</h2>
+
+        <div class="filtros-pedidos">
+            <button type="button" class="filtro-pedido active"
+                data-filtro="Activos"
+                onclick="filtrarPedidos('Activos', this)">
+                Activos
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Pendiente"
+                onclick="filtrarPedidos('Pendiente', this)">
+                Pendientes
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Preparando"
+                onclick="filtrarPedidos('Preparando', this)">
+                Preparando
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Listo"
+                onclick="filtrarPedidos('Listo', this)">
+                Listos
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Entregado"
+                onclick="filtrarPedidos('Entregado', this)">
+                Entregados
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Cancelado"
+                onclick="filtrarPedidos('Cancelado', this)">
+                Cancelados
+            </button>
+            <button type="button" class="filtro-pedido"
+                data-filtro="Todos"
+                onclick="filtrarPedidos('Todos', this)">
+                Todos
+            </button>
+        </div>
+
+        <table class="productos-table">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Orden</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Total</th>
+                    <th>Método</th>
+                    <th>Pago</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for pedido in pedidos %}
+
+                <tr id="pedido-{{ pedido.id }}"
+                    class="fila-pedido"
+                    data-estado="{{ pedido.estado }}">
+
+                    <td>{{ pedido.id }}</td>
+
+                    <td>
+                        {% if pedido.numero_orden %}
+                            <strong>#{{ pedido.numero_orden }}</strong>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
+                    <td>{{ pedido.nombre }}</td>
+
+                    <td>{{ pedido.telefono }}</td>
+
+                    <td>₡{{ pedido.total }}</td>
+
+                    <td>{{ pedido.metodo_pago }}</td>
+
+                    <td>
+                        <span id="estado-pago-{{ pedido.id }}"
+                            class="estado-pago
+                            {% if pedido.estado_pago == 'Pagado' %}pago-completado{% elif pedido.estado_pago == 'Pendiente de pago' %}pago-pendiente{% else %}pago-comprobante{% endif %}">
+                            {{ pedido.estado_pago }}
+                        </span>
+                        {% if pedido.estado_pago != "Pagado" %}
+                        <form method="POST"
+                            action="{% url 'actualizar_pago_pedido' pedido.id %}"
+                            class="form-marcar-pago"
+                            data-swal-confirm
+                            data-swal-title="¿Confirmar el pago?"
+                            data-swal-text="El pedido se marcará como pagado."
+                            data-swal-button="Sí, marcar pagado">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-marcar-pago">
+                                ✓ Marcar pagado
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+
+                    <td>
+
+                        <span class="estado {{ pedido.estado|lower }}">
+                            {{ pedido.estado }}
+                        </span>
+
+                    </td>
+
+                    <td>{{ pedido.fecha }}</td>
+
+                    <td>
+
+                        <div class="acciones acciones-pedido">
+                            <button type="button" class="btn-edit"
+                                onclick="verPedido('{{ pedido.id }}')">
+                                👁 Ver
+                            </button>
+
+                            {% if pedido.estado == "Pendiente" %}
+                            <button type="button" class="btn-preparando"
+                                onclick="actualizarEstadoPedido(
+                                    '{{ pedido.id }}',
+                                    'Preparando',
+                                    true
+                                )">
+                                📦 Preparar pedido
+                            </button>
+                            {% elif pedido.estado == "Preparando" %}
+                            <button type="button" class="btn-listo"
+                                onclick="actualizarEstadoPedido(
+                                    '{{ pedido.id }}',
+                                    'Listo',
+                                    true
+                                )">
+                                ✅ Listo
+                            </button>
+                            {% elif pedido.estado == "Listo" %}
+                            <button type="button" class="btn-entregado"
+                                onclick="actualizarEstadoPedido(
+                                    '{{ pedido.id }}',
+                                    'Entregado',
+                                    false
+                                )">
+                                📦 Entregado
+                            </button>
+                            {% endif %}
+
+                            {% if pedido.estado != "Entregado" and pedido.estado != "Cancelado" %}
+                            <button type="button" class="btn-cancelar"
+                                onclick="actualizarEstadoPedido(
+                                    '{{ pedido.id }}',
+                                    'Cancelado',
+                                    true
+                                )">
+                                ✕ Cancelar
+                            </button>
+                            {% endif %}
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                <tr id="detalle-pedido-{{ pedido.id }}"
+                    class="detalle-pedido"
+                    data-pedido="{{ pedido.id }}"
+                    style="display:none;">
+                    <td colspan="10">
+                        <div class="detalle-grid">
+                            <div>
+                                <strong>Dirección</strong>
+                                <p>{{ pedido.direccion }}</p>
+                            </div>
+                            <div>
+                                <strong>Comentarios</strong>
+                                <p>{{ pedido.comentarios|default:"Sin comentarios" }}</p>
+                            </div>
+                            <div>
+                                <strong>Productos</strong>
+                                <ul>
+                                    {% for detalle in pedido.detallepedido_set.all %}
+                                    <li>
+                                        {{ detalle.cantidad }} ×
+                                        {{ detalle.producto.nombre }}
+                                        {% if detalle.opcion %}
+                                            ({{ detalle.opcion }})
+                                        {% endif %}
+                                        —
+                                        ₡{{ detalle.precio }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% if pedido.comprobante %}
+                            <div>
+                                <strong>Comprobante</strong>
+                                <p>
+                                    <a href="{{ pedido.comprobante.url }}"
+                                       target="_blank" rel="noopener">
+                                        Ver comprobante
+                                    </a>
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                <tr>
+
+                    <td colspan="10">
+
+                        No hay pedidos registrados.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% if request.user.is_superuser %}
+<div id="tab-usuarios" style="display:none;">
+    <div class="admin-form">
+        <h2>Agregar usuario</h2>
+        <p class="form-help">
+            Los operarios pueden gestionar productos y pedidos, pero no
+            pueden ver ni administrar usuarios.
+        </p>
+
+        <form method="POST" action="{% url 'crear_usuario' %}">
+            {% csrf_token %}
+            <div class="form-grid user-form-grid">
+                <input type="text" name="username"
+                    placeholder="Nombre de usuario" required autocomplete="off">
+                <input type="text" name="first_name"
+                    placeholder="Nombre">
+                <input type="text" name="last_name"
+                    placeholder="Apellidos">
+                <input type="email" name="email"
+                    placeholder="Correo electrónico">
+                <input type="password" name="password"
+                    placeholder="Contraseña" required autocomplete="new-password">
+                <select name="rol" required>
+                    <option value="operario">Operario</option>
+                    <option value="administrador">Administrador</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-save">Crear usuario</button>
+        </form>
+    </div>
+
+    <div class="admin-products">
+        <h2>Usuarios registrados</h2>
+        <table class="productos-table usuarios-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>
+                        <strong>{{ usuario.username }}</strong>
+                        {% if usuario == request.user %}<small>(vos)</small>{% endif %}
+                    </td>
+                    <td>{{ usuario.get_full_name|default:"—" }}</td>
+                    <td>{{ usuario.email|default:"—" }}</td>
+                    <td><span class="rol-badge">{{ usuario.rol_panel }}</span></td>
+                    <td>
+                        <span class="estado-usuario {% if usuario.is_active %}activo{% else %}inactivo{% endif %}">
+                            {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="acciones">
+                            <button type="button" class="btn-edit"
+                                onclick="abrirModalUsuario(
+                                    '{{ usuario.id }}',
+                                    '{{ usuario.username|escapejs }}',
+                                    '{{ usuario.first_name|escapejs }}',
+                                    '{{ usuario.last_name|escapejs }}',
+                                    '{{ usuario.email|escapejs }}',
+                                    '{{ usuario.rol_panel|lower }}',
+                                    {{ usuario.is_active|yesno:'true,false' }}
+                                )">
+                                Editar
+                            </button>
+                            {% if usuario != request.user %}
+                            <form method="POST"
+                                action="{% url 'eliminar_usuario' usuario.id %}"
+                                data-swal-confirm
+                                data-swal-title="¿Eliminar este usuario?"
+                                data-swal-text="La cuenta perderá el acceso al panel."
+                                data-swal-button="Sí, eliminar">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-delete">
+                                    Eliminar
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">No hay usuarios registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalUsuario" class="modal">
+    <div class="modal-content modal-usuario-content">
+        <span class="close" onclick="cerrarModalUsuario()">×</span>
+        <h2>Editar usuario</h2>
+        <form id="formEditarUsuario" method="POST">
+            {% csrf_token %}
+            <div class="form-grid user-form-grid">
+                <input id="usuarioUsername" type="text" name="username"
+                    placeholder="Nombre de usuario" required>
+                <input id="usuarioNombre" type="text" name="first_name"
+                    placeholder="Nombre">
+                <input id="usuarioApellido" type="text" name="last_name"
+                    placeholder="Apellidos">
+                <input id="usuarioEmail" type="email" name="email"
+                    placeholder="Correo electrónico">
+                <input type="password" name="password"
+                    placeholder="Nueva contraseña (opcional)"
+                    autocomplete="new-password">
+                <select id="usuarioRol" name="rol" required>
+                    <option value="operario">Operario</option>
+                    <option value="administrador">Administrador</option>
+                </select>
+                <label class="usuario-activo full">
+                    <input id="usuarioActivo" type="checkbox" name="is_active">
+                    Usuario activo
+                </label>
+            </div>
+            <button type="submit" class="btn-save">Guardar cambios</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+    <!-- CONFIG -->
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/admin.js' %}"></script>
+</body>
+
+</html>
